@@ -1,5 +1,6 @@
 ---
-title: "Michal's usescases gathered from practice"
+title: "Usescases based on GSS experience"
+author: "Michał Bojanowski"
 output: github_document
 editor_options: 
   chunk_output_type: console
@@ -17,11 +18,19 @@ knitr::opts_chunk$set(
 ```
 
 
+
+
 I went through the scripts from my recent analyses (GSS 2004) and collected concrete problems/questions I needed to compute/answer. I decided to make a separate document (an `Rmd` in `tests/testthat`) based on the subset data I comitted to the package (`gss2004`). Probably some of the items below are contained in the items in the wiki. But just probably. The list is by no means exhaustive.
+
+All of this is **tidyverse** 'magic'. Perhaps we would like to have wrappers/shortcuts in **egor** for (some of) those operations.
+
+
+
+
 
 # Data
 
-See `?gss2004`. Data are labelled. I drop the labels as this is a huge but separate issue which causes a lot of warnings (mostly harmless though).
+See `?gss2004`. Data are labelled. I drop the labels as this is a huge but a separate issue which causes a lot of warnings (mostly harmless though).
 
 ```{r load-gss}
 data(gss2004)
@@ -33,9 +42,12 @@ gss2004 <- gss2004 %>%
 
 
 
-Now we create data frames for egos, for alters, and with alter-alter ties. Processing might be helpful when implementing import functions. The data frames will be used in usecases below too.
+Now we create data frames for egos, for alters, and for alter-alter ties. Processing code might be a helpful inspiration when implementing import functions. The data frames will be used in usecases below too to illustrate what the goal is.
 
-Ego data frame:
+None of the variables are transformed, it's just splitting and reshaping.
+
+
+## Ego data frame
 
 ```{r egodf}
 egodf <- gss2004 %>%
@@ -46,10 +58,12 @@ egodf %>%
   kable()
 ```
 
-Alter data frame:
+## Alter data frame
+
+Do mind that `alterslots` below includes all the alter **slots** (5 per ego), i.e. the cases for alters the ego in fact did not nominate.
 
 ```{r alterdf}
-alterdf <-
+alterslots <-
 gss2004 %>%
   select(
     id_ego = id,
@@ -63,31 +77,28 @@ gss2004 %>%
   ) %>%
   mutate(
     id_alter = as.numeric(id_alter)
-  )
-
-# Alter attribute names
-vnames <-
-  alterdf %>%
-  pull(variable) %>%
-  unique()
-
-alterdf <-
-  alterdf %>%
+  ) %>%
   spread(variable, val)
 
 alterdf %>%
   head() %>%
   kable()
+
 ```
 
-Alter-alter "ties":
+
+
+## Alter-alter "ties"
+
+These are "ties" (quoted) as `closeXY` variables are in fact dyadic variables (in the alter set) and may become ties-proper when dychotomized.
+
 
 ```{r aadf}
 aadf <-
   gss2004 %>%
   select(
     id_ego = id,
-    matches("close[0-9]{2}$")
+    matches("^close[0-9]{2}$")
   ) %>%
   gather(var, val, -id_ego) %>%
   tidyr::extract(
@@ -108,14 +119,46 @@ aadf %>%
 ```
 
 
-### Descriptive stats on ego variables
-
-Such as frequency tables, crosstabs, etc.
+# Usecases
 
 
-### Descriptive stats on alter variables
 
-As above.
+## Descriptive stats of ego-level variables
+
+Such as frequency tables, crosstabs, etc., e.g.:
+
+```{r}
+egodf %>%
+  count(race)
+
+egodf %>%
+  summarise(
+    mean_age = mean(age, na.rm=TRUE)
+  )
+```
+
+## Filtering
+
+Filtering based on ego variables
+
+
+## Tabulating ego-level vs alter-level variables
+
+This counts alters
+
+```{r}
+egodf %>%
+  right_join(alterslots, by=c("id"="id_ego"), suffix=c(".ego", ".alter") ) %>%
+  with(table(numgiven, race.alter, exclude=NULL))
+```
+
+
+
+### Descriptive stats of alter-level variables
+
+```{r}
+alterdf
+```
 
 ### Descriptive stats on alter-alter variables
 
