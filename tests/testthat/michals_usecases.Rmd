@@ -1,0 +1,134 @@
+---
+title: "Michal's usescases gathered from practice"
+output: github_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(egor)
+library(knitr)
+requireNamespace("labelled")
+
+knitr::opts_chunk$set(
+  echo = TRUE
+  )
+```
+
+
+I went through the scripts from my recent analyses (GSS 2004) and collected concrete problems/questions I needed to compute/answer. I decided to make a separate document (an `Rmd` in `tests/testthat`) based on the subset data I comitted to the package (`gss2004`). Probably some of the items below are contained in the items in the wiki. But just probably. The list is by no means exhaustive.
+
+# Data
+
+See `?gss2004`. Data are labelled. I drop the labels as this is a huge but separate issue which causes a lot of warnings (mostly harmless though).
+
+```{r load-gss}
+data(gss2004)
+
+gss2004 <- gss2004 %>%
+  labelled::remove_labels()
+```
+
+
+
+
+Now we create data frames for egos, for alters, and with alter-alter ties. Processing might be helpful when implementing import functions. The data frames will be used in usecases below too.
+
+Ego data frame:
+
+```{r egodf}
+egodf <- gss2004 %>%
+  select(id, matches("[^0-9]$"))
+
+egodf %>%
+  head() %>%
+  kable()
+```
+
+Alter data frame:
+
+```{r alterdf}
+alterdf <-
+gss2004 %>%
+  select(
+    id_ego = id,
+    matches("[a-z][0-9]$")
+  ) %>%
+  gather(var, val, -id_ego) %>%
+  tidyr::extract(
+    var, 
+    into = c("variable", "id_alter"),
+    regex = "([a-z]+)([0-9])"
+  ) %>%
+  mutate(
+    id_alter = as.numeric(id_alter)
+  )
+
+# Alter attribute names
+vnames <-
+  alterdf %>%
+  pull(variable) %>%
+  unique()
+
+alterdf <-
+  alterdf %>%
+  spread(variable, val)
+
+alterdf %>%
+  head() %>%
+  kable()
+```
+
+Alter-alter "ties":
+
+```{r aadf}
+aadf <-
+  gss2004 %>%
+  select(
+    id_ego = id,
+    matches("close[0-9]{2}$")
+  ) %>%
+  gather(var, val, -id_ego) %>%
+  tidyr::extract(
+    var,
+    into = c("variable", "from", "to"),
+    regex = "(close)([0-9])([0-9])"
+  ) %>%
+  mutate_at(
+    c("from", "to", 'val'),
+    as.numeric
+  ) %>%
+  spread(variable, val)
+
+aadf %>%
+  head() %>%
+  kable()
+
+```
+
+
+### Descriptive stats on ego variables
+
+Such as frequency tables, crosstabs, etc.
+
+
+### Descriptive stats on alter variables
+
+As above.
+
+### Descriptive stats on alter-alter variables
+
+In GSS 2004 alter-alter ties are represented with variables `closeXY` (with `X=1:4` and `Y=2:5`) such that, say, `close12` is a variable describing, according to Ego, how close alters 1 and 2 are. The are
+
+
+
+### Tabulate alter attribute vs ego attribute
+
+... with counts based on alters, i.e. on `left_join(alters, egos)`
+
+
+
+
+
+
