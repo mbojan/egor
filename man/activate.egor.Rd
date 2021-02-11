@@ -2,9 +2,15 @@
 % Please edit documentation in R/activation.R
 \name{activate.egor}
 \alias{activate.egor}
+\alias{activate}
+\alias{activate.default}
 \title{Activate ego, alter or alter-alter tie data llevel of an egor dataset}
 \usage{
 \method{activate}{egor}(.data, what)
+
+activate(.data, what)
+
+\method{activate}{default}(.data, what)
 }
 \arguments{
 \item{.data}{The \code{egor} dataset.}

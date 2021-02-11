@@ -20,3 +20,18 @@ activate.egor <- function(.data, what) {
   attr(.data, "active") <- what
   .data
 }
+
+
+#' @rdname activate.egor
+#' @export
+activate <- function(.data, what) UseMethod("activate")
+
+#' @rdname activate.egor
+#' @export
+activate.default <- function(.data, what) {
+  if(requireNamespace("tidygraph")) {
+    w <- rlang::enquo(what)
+    tidygraph::activate(.data, what = !!w)
+  }
+}
+  
