@@ -15,7 +15,7 @@
 #'    activate("alter") %>% 
 #'    mutate(age.years = age.years^3)
 activate.egor <- function(.data, what) {
-  what <- as.character(substitute(what))
+  what <- gsub('"', '', rlang::quo_text(rlang::enquo(what)))
   what <- match.arg(what, UNITS)
   attr(.data, "active") <- what
   .data
